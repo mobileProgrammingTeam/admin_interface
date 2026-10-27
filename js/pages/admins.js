@@ -1,0 +1,10 @@
+import { badge, escape, table } from '../components/ui.js';
+
+export function adminsPage(admins, workers) {
+  const zones=[...new Map(workers.filter(w=>w.zone?.id).map(w=>[w.zone.id,w.zone])).values()];
+  return `<div class="page-heading"><div><p class="eyebrow">접근 관리</p><h1>관리자 관리</h1><p class="muted">관리자 목록과 역할·활성 상태를 관리합니다.</p></div></div>
+    <section class="panel"><h2>관리자 목록</h2>${table(['이름','이메일','역할','상태','관리'],admins.map(a=>`<tr><td>${escape(a.name)}</td><td>${escape(a.email)}</td><td>${a.role==='SUPER_ADMIN'?badge(a.role):`<form class="inline-form admin-role-form" data-id="${escape(a.id)}"><select name="role" aria-label="${escape(a.name)} 역할"><option value="ADMIN" ${a.role==='ADMIN'?'selected':''}>관리자</option><option value="VIEWER" ${a.role==='VIEWER'?'selected':''}>조회 전용</option></select><button>변경</button></form>`}</td><td>${a.active?'<span class="badge NORMAL">활성</span>':'<span class="badge OFFLINE">중지</span>'}</td><td>${a.role==='SUPER_ADMIN'?'총괄 관리자':`<button data-admin-toggle="${escape(a.id)}">${a.active?'사용 중지':'다시 활성화'}</button>`}</td></tr>`))}</section>
+    <section class="panel settings-panel"><h2>관리자 추가</h2><form id="admin-form"><label>이름<input name="name" maxlength="50" required></label><label>이메일<input name="email" type="email" maxlength="120" required></label><label>역할<select name="role"><option value="ADMIN">관리자</option><option value="VIEWER">조회 전용</option></select></label><button>관리자 추가</button></form><p class="muted">조회 전용은 목록·상세만 보는 역할을 뜻합니다. 현재는 실제 권한 제한이 적용되지 않습니다.</p></section>
+    <section class="panel settings-panel"><h2>작업자 추가</h2><form id="worker-create-form"><label>작업자 이름<input name="name" maxlength="50" required></label><label>작업 구역<select name="zoneId"><option value="">미배정</option>${zones.map(z=>`<option value="${escape(z.id)}">${escape(z.name)}</option>`).join('')}</select></label><button>작업자 추가</button></form><p class="muted">추가된 작업자는 연결 정보가 들어오기 전까지 오프라인으로 표시됩니다. <a href="#workers">작업자 목록 보기</a></p></section>
+    <p class="hint">계정 목록은 UI 시연용이며 로그인 권한을 만들지 않습니다. 실제 계정 생성·역할 변경·중지는 인증 서버의 권한 검증과 감사 기록이 필요합니다.</p>`;
+}
