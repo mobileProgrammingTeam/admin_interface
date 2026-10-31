@@ -107,6 +107,10 @@ td a:hover,.surface-head a:hover { text-decoration:underline; }
 #notice:empty { display:none; }
 dialog { border:1px solid #dce5f0; border-radius:15px; box-shadow:0 24px 70px #12233f44; }
 .login { margin:50px auto; border-radius:16px; border-color:#e1e9f3; box-shadow:0 12px 32px #1b2c480f; }
+.login { width:100%; }
+.login input, .login form > button, .login > button { width:100%; min-width:0; }
+.login-actions { display:flex; flex-wrap:wrap; gap:10px; width:100%; }
+.login-actions > button { flex:1 1 150px; min-width:0; }
 .logged-out .topbar { justify-content:flex-start; }
 .logged-out .topbar .mobile-brand { display:block; }
 

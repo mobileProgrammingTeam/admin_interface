@@ -4,6 +4,13 @@ export const labels = {
   LOW:'낮음', MEDIUM:'보통', HIGH:'높음', CRITICAL:'긴급', NEW:'신규', REQUEST:'요청', ACKNOWLEDGED:'확인', RESOLVED:'해결', STALE:'통신 지연',
   SUPER_ADMIN:'총괄 관리자', ADMIN:'관리자', VIEWER:'조회 전용'
 };
+// NORMAL means no unresolved alert, not a clinical measurement.
+// Legacy events without affectedMetrics conservatively flag both metrics.
+export function vitalStatus(workerId, metric, events = []) {
+  return events.some(e => e.workerId === workerId && e.type === 'VITAL_ABNORMAL'
+    && e.status !== 'RESOLVED'
+    && (!Array.isArray(e.affectedMetrics) || e.affectedMetrics.includes(metric))) ? 'DANGER' : 'NORMAL';
+}
 export function transition(event, action, note = '') {
   const allowed = action === 'acknowledge' ? ['NEW','REQUEST'] : action === 'resolve' ? ['ACKNOWLEDGED'] : [];
   if (!allowed.includes(event.status)) throw new Error('처리 상태가 변경되었습니다. 새로고침 후 다시 확인하세요.');

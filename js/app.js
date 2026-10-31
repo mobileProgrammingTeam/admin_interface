@@ -7,6 +7,7 @@ import { dashboard } from './pages/dashboard.js';
 import { workersPage, workerDetail } from './pages/workers.js';
 import { eventsPage, eventDetail } from './pages/events.js';
 import { loginPage } from './pages/login.js';
+import { registerPage } from './pages/register.js';
 import { alertsPage } from './pages/alerts.js';
 import { connectivityPage } from './pages/connectivity.js';
 import { reportsPage } from './pages/reports.js';
@@ -44,7 +45,7 @@ async function render({quiet=false}={}) {
     else if(route==='zones') {const [workers,warnings,messages]=await Promise.all([api.workers(),api.workerWarnings(),api.workerMessages()]);html=zonesPage(workers,warnings,messages);}
     else if(route.startsWith('zones/')) html=zoneDetail(await api.workers(),decodeURIComponent(route.slice(6)));
     else if(route==='weather') {const [weather,notices]=await Promise.all([api.weather(),api.weatherNotices()]);html=weatherPage(weather,notices);}
-    else if(route==='workers') html=workersPage(await api.workers(),workerFilters);
+    else if(route==='workers') {const [workers,events]=await Promise.all([api.workers(),api.events()]);html=workersPage(workers,workerFilters,events);}
     else if(route.startsWith('workers/')) {
       const id=decodeURIComponent(route.slice(8));const [w,events]=await Promise.all([api.worker(id),api.events({workerId:id})]);html=workerDetail(w,events);
     } else if(route==='events') html=eventsPage(await api.events(eventFilters));
@@ -82,6 +83,8 @@ window.addEventListener('hashchange',()=>{dialog.close();void render().catch(()=
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
   if(button.dataset.event)void showEvent(button.dataset.event);
+  if(button.id==='open-register' && !user) {app.innerHTML=registerPage(config.mock);message('');app.querySelector('input')?.focus();}
+  if(button.id==='back-login' && !user) {app.innerHTML=loginPage(config.mock);message('');app.querySelector('button')?.focus();}
   if(button.id==='retry')void render().catch(()=>{});
   if(button.id==='reset-demo') {try{api.reset();message('샘플 데이터를 초기화했습니다.');}catch(e){message(e.message);}}
   if(button.id==='export-report') void exportReport();
@@ -100,11 +103,19 @@ async function exportReport() {
   } catch(error) {message(error.message);}
 }
 document.addEventListener('submit',async event=>{
-  const form=event.target;if(!['login-form','worker-filter','event-filter','report-filter','event-action','settings-form','admin-form','worker-create-form','weather-notice-form'].includes(form.id)&&!form.classList.contains('admin-role-form')&&!form.classList.contains('restricted-response-form'))return;
+  const form=event.target;if(!['login-form','register-form','worker-filter','event-filter','report-filter','event-action','settings-form','admin-form','worker-create-form','weather-notice-form'].includes(form.id)&&!form.classList.contains('admin-role-form')&&!form.classList.contains('restricted-response-form'))return;
   event.preventDefault();const fields=Object.fromEntries(new FormData(form));const button=event.submitter;
   if(button)button.disabled=true;message('');
   try {
     if(form.id==='login-form'){user=await auth.login(fields.email,fields.password);await enter();}
+    if(form.id==='register-form'){
+      if(!config.mock) throw new Error('계정 생성 서버가 아직 연결되지 않았습니다.');
+      if(fields.password.length<8) throw new Error('비밀번호는 8자 이상 입력하세요.');
+      if(fields.password!==fields.passwordConfirm) throw new Error('비밀번호가 일치하지 않습니다.');
+      await api.addWorker({name:fields.name,email:fields.email});
+      form.reset();app.innerHTML=loginPage(config.mock);
+      message('시연용 작업자 정보를 등록했습니다. 실제 로그인 계정은 생성되지 않았습니다. 샘플 관리자 입장 후 작업자 목록에서 확인하세요.');
+    }
     if(form.id==='worker-filter'){workerFilters=fields;await render();}
     if(form.id==='event-filter'){eventFilters=fields;await render();}
     if(form.id==='report-filter'){reportFilters=fields;await render();}

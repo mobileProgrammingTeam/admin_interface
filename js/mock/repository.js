@@ -60,12 +60,15 @@ export function createMockRepository(storage) {
       const name=String(input.name??'').trim();
       if(!name||name.length>50) throw new Error('작업자 이름을 확인하세요.');
       const data=read();
+      const email=String(input.email??'').trim().toLowerCase();
+      if(email && (!/^\S+@\S+\.\S+$/.test(email)||email.length>120)) throw new Error('이메일을 확인하세요.');
+      if(email && data.workers.some(w=>w.email?.toLowerCase()===email)) throw new Error('이미 등록된 작업자 이메일입니다.');
       const zoneId=String(input.zoneId??'');
       const zone=zoneId ? data.workers.find(w=>w.zone?.id===zoneId)?.zone : null;
       if(zoneId&&!zone) throw new Error('작업 구역을 찾을 수 없습니다.');
       const numbers=data.workers.map(w=>Number(/^worker-(\d+)$/.exec(w.id)?.[1]??0));
       const id=`worker-${String(Math.max(0,...numbers)+1).padStart(3,'0')}`;
-      const worker={id,name,status:'OFFLINE',connectionStatus:'OFFLINE',zone:zone??null,vitals:{heartRate:null,spo2:null,measuredAt:null},lastSeenAt:null,devices:[]};
+      const worker={id,name,...(email?{email}:{}),status:'OFFLINE',connectionStatus:'OFFLINE',zone:zone??null,vitals:{heartRate:null,spo2:null,measuredAt:null},lastSeenAt:null,devices:[]};
       data.workers.push(worker);write(data);return worker;
     },
     async worker(id) { const w=read().workers.find(w=>w.id===id); if(!w) throw new Error('작업자를 찾을 수 없습니다.'); return w; },
