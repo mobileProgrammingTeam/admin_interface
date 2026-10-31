@@ -11,6 +11,14 @@ export function vitalStatus(workerId, metric, events = []) {
     && e.status !== 'RESOLVED'
     && (!Array.isArray(e.affectedMetrics) || e.affectedMetrics.includes(metric))) ? 'DANGER' : 'NORMAL';
 }
+export function workerVitalStatus(worker, metric, events = [], allowMockFallback = false) {
+  const key=`${metric}Status`;
+  if(Object.hasOwn(worker.vitals??{},key)) {
+    const value=worker.vitals[key];
+    return ['NORMAL','DANGER','UNKNOWN','DISCONNECTED'].includes(value) ? value : 'UNKNOWN';
+  }
+  return allowMockFallback ? vitalStatus(worker.id,metric,events) : 'UNKNOWN';
+}
 export function transition(event, action, note = '') {
   const allowed = action === 'acknowledge' ? ['NEW','REQUEST'] : action === 'resolve' ? ['ACKNOWLEDGED'] : [];
   if (!allowed.includes(event.status)) throw new Error('처리 상태가 변경되었습니다. 새로고침 후 다시 확인하세요.');
